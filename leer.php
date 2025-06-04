@@ -33,29 +33,29 @@ function getSEA($codigo){
 
 function verificarSEA($codSEA, $datos) {
     $sea = getSEA($codSEA);
-    $total = 0;
-    $resultado = [];
 
-    if (isset($datos['Tarea:Notas de Práctica (Real)'])) {
-        $total += floatval(str_replace(',', '.', $datos['Tarea:Notas de Práctica (Real)'])) * ($sea['practicas'] / 100);
+    if(floatval($datos['Tarea:Notas de Práctica (Real)']) > $sea['practicas']) {
+        $datos['Practicas Rev. SEA'] = "practicas excel = ".$datos['Tarea:Notas de Práctica (Real)']." - practicasSEA = ".$sea['practicas'];
+    }
+
+    if(floatval($datos['Total Parcial']) > $sea['parciales']) {
+        $datos['Parciales Rev. SEA'] = "parciales excel = ".$datos['Total Parcial']." - parcialesSEA = ".$sea['parciales'];
+    }
+
+    if(floatval($datos['Cuestionario:EXAMEN FINAL (Real)']) > $sea['final']){
+        $datos['Final Rev. SEA'] = "final excel = ".$datos['Cuestionario:EXAMEN FINAL (Real)']." - finalSEA = ".$sea['final'];
+    }
+
+    if(floatval($datos['Cuestionario:EXAMEN FINAL (Real)']) + floatval($datos['Total Parcial']) + floatval($datos['Tarea:Notas de Práctica (Real)']) > 100){
+        $datos['Total Rev. SEA'] = "total excel = ".(floatval($datos['Cuestionario:EXAMEN FINAL (Real)']) + floatval($datos['Total Parcial']) + floatval($datos['Tarea:Notas de Práctica (Real)']))." - totalSEA = 100";
+    }
+
+    if (floatval($datos['Segunda Instancia (Real)']) > $sea['final']) {
+        $datos['Segunda Instancia Rev. SEA'] = "segunda instancia excel = ".$datos['Segunda Instancia (Real)']." - finalSEA = ".$sea['final'];
     }
     
-    foreach ($datos as $clave => $valor) {
-        if (str_starts_with($clave, 'Parcial') && !str_contains($clave, ':')) {
-            $total += floatval(str_replace(',', '.', $valor)) * ($sea['parciales'] / 100);
-        }
-    }
+    return $datos;
 
-    if (isset($datos['Prueba Final (Real)'])) {
-        $total += floatval(str_replace(',', '.', $datos['Prueba Final (Real)'])) * ($sea['final'] / 100);
-    }
-
-    if (isset($datos['Pruebas de Laboratorio (Real)'])) {
-        $total += floatval(str_replace(',', '.', $datos['Pruebas de Laboratorio (Real)'])) * ($sea['laboratorio'] / 100);
-    }
-
-    $resultado['Total SEA'] = round($total, 2);
-    return $resultado;
     
 }
 
@@ -110,7 +110,7 @@ function promedioParciales($datos) {
     return $datos;
 }
 
-$archivo = fopen("CSV/dato01.csv", "r");
+$archivo = fopen("CSV/dato02.csv", "r");
 
 if ($archivo) {
     $k = 0; 
@@ -124,7 +124,7 @@ if ($archivo) {
             $nuevoArray = newArray($cabecera, $narray);
             $nuevoArray = promediotareas($nuevoArray); // Calcular el promedio de tareas
             $nuevoArray = promedioParciales($nuevoArray); // Calcular el promedio de parciales
-            $codigoSEAv = getSEA($nuevoArray['SEA']);
+            $nuevoArray = verificarSEA($nuevoArray['SEA'], $nuevoArray); // Verificar SEA
             $resultado[] = $nuevoArray; // Agregar el nuevo array al resultado
         }
         $k++;
