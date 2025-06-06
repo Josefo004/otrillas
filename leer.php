@@ -154,7 +154,7 @@ function generarSQL($datos) {
     foreach($parciales as $clave => $valor) {$q .= "$clave, ";}
 
     
-    $q .= "PromedioParciales, NotaSemifinal, ExamenFinal, NotaFinal, ExamenSegundaInstancia, NotaSegundaInstancia, FechaHoraImportar) ";
+    $q .= "PromedioParciales, NotaSemifinal, ExamenFinal, NotaFinal, ExamenSegundaInstancia, NotaSegundaInstancia) ";
     $q .= "VALUES ('$Ci', '$CodigoCarrera', '$NumeroPlanEstudios', '$GestionAcademica', '$CodigoModalidadCurso', '$SiglaMateria', '$CodigoSEA', '$Grupo', ";
     foreach($tareas as $clave => $valor) {
         $q .= "'" . $valor . "', ";
@@ -165,7 +165,7 @@ function generarSQL($datos) {
     foreach($parciales as $clave => $valor) {
         $q .= "'" . $valor . "', ";
     }
-    $q .= "'$PromedioParciales', '$NotaSemifinal', '$ExamenFinal', '$NotaFinal', '$ExamenSegundaInstancia', '$NotaSegundaInstancia', NOW());";
+    $q .= "'$PromedioParciales', '$NotaSemifinal', '$ExamenFinal', '$NotaFinal', '$ExamenSegundaInstancia', '$NotaSegundaInstancia');";
 
     echo $q . "\n</br></br>";
 }
