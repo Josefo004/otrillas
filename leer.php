@@ -103,7 +103,6 @@ function promedioParciales($datos, $sea) {
 }
 
 function generarSQL($datos) {
-    $Ci = $datos['Nombre de usuario'];
     $CodigoCarrera = '127';
     $NumeroPlanEstudios = '1';
     $GestionAcademica = '2025';
@@ -111,7 +110,8 @@ function generarSQL($datos) {
     $SiglaMateria = 'CJS102';
     $CodigoSEA = $datos['SEA'];
     $Grupo = $datos['Grupo'];
-
+    
+    $Ci = $datos['Nombre de usuario'];
     $NotasPracticas = $datos['Tarea:Notas de Práctica (Real)'];
     $PromedioParciales = $datos['Total Parcial'];
     $NotaSemifinal = $datos['Nota Entrada'];
@@ -143,9 +143,9 @@ function generarSQL($datos) {
         }
     }
 
-    echo '<pre>'.var_export($datos, true).'</pre>';
-    echo '<pre>'.var_export($tareas, true).'</pre>';
-    echo '<pre>'.var_export($parciales, true).'</pre>';
+    // echo '<pre>'.var_export($datos, true).'</pre>';
+    // echo '<pre>'.var_export($tareas, true).'</pre>';
+    // echo '<pre>'.var_export($parciales, true).'</pre>';
 
     $q = "INSERT INTO ImportarMoodleCalificaciones (Ci, CodigoCarrera, NumeroPlanEstudios, GestionAcademica, CodigoModalidadCurso, SiglaMateria, CodigoSEA, Grupo, ";
     foreach($tareas as $clave => $valor) {$q .= "$clave, ";}
@@ -157,24 +157,45 @@ function generarSQL($datos) {
     $q .= "PromedioParciales, NotaSemifinal, ExamenFinal, NotaFinal, ExamenSegundaInstancia, NotaSegundaInstancia, FechaHoraImportar) ";
     $q .= "VALUES ('$Ci', '$CodigoCarrera', '$NumeroPlanEstudios', '$GestionAcademica', '$CodigoModalidadCurso', '$SiglaMateria', '$CodigoSEA', '$Grupo', ";
     foreach($tareas as $clave => $valor) {
-        $q .= "'" . $valor[$clave] . "', ";
+        $q .= "'" . $valor . "', ";
     }
-    echo $q . "\n<br>";
+
     $q .= "'$NotasPracticas', ";
+    
     foreach($parciales as $clave => $valor) {
-        $q .= "'" . $valor[key($valor)] . "', ";
+        $q .= "'" . $valor . "', ";
     }
-    $q .= "'$PromedioParciales', '$NotaSemifinal', '$ExamenFinal', '$NotaFinal', '$ExamenSegundaInstancia', '$NotaSegundaInstancia', NOW())";
+    $q .= "'$PromedioParciales', '$NotaSemifinal', '$ExamenFinal', '$NotaFinal', '$ExamenSegundaInstancia', '$NotaSegundaInstancia', NOW());";
 
+    echo $q . "\n</br></br>";
+}
 
+function depurar($data) {
+    $mismaSigla = $data[0]['Sigla'];
+    $mismoSEA = $data[0]['SEA'];
+    $mismoGrupo = $data[0]['Grupo'];
+    $mismoCodigoCarrera = $data[0]['CodigoCarrera'];
+    $reSigla = false;
+    $reSEA = false;
+    $reGrupo = false;
+    $reCodigoCarrera = false;
+    foreach ($data as $item) {
+        if ($item['Sigla'] !== $mismaSigla) { $reSigla = true; }
+        if ($item['SEA'] !== $mismoSEA) { $reSEA = true; }
+        if ($item['Grupo'] !== $mismoGrupo) { $reGrupo = true; }
+        if ($item['CodigoCarrera'] !== $mismoCodigoCarrera) { $reCodigoCarrera = true; }
+    }
+    if ($reSigla || $reSEA || $reGrupo || $reCodigoCarrera) {
+        echo "<h1>Advertencia: Datos inconsistentes</h1>\n";
+        if ($reSigla) { echo "<p>Las siglas de las materias no coinciden.</p>\n"; }
+        if ($reSEA) { echo "<p>Los SEA no coinciden.</p>\n"; }
+        if ($reGrupo) { echo "<p>Los grupos no coinciden.</p>\n"; }
+        if ($reCodigoCarrera) { echo "<p>Los códigos de carrera no coinciden.</p>\n"; }
+        exit();
+    } else {
+        echo "<h1>Datos consistentes</h1>\n";
+    }
 
-    //Tarea1, Tarea2, Tarea3, Tarea4, Tarea5, Tarea6, Tarea7, Tarea8, Tarea9, Tarea10, NotasPracticas, Parcial1, Parcial2, Parcial3, PromedioParciales, NotaSemifinal, ExamenFinal, NotaFinal, ExamenSegundaInstancia, NotaSegundaInstancia, FechaHoraImportar) VALUES (";
-
-    // echo '<pre>'.var_export($tareas, true).'</pre>';
-    // echo '<pre>'.var_export($parciales, true).'</pre>';
-
-
-    echo $q . "\n<br>";
 }
 
 $archivo = fopen("CSV/dato02.csv", "r");
@@ -197,8 +218,10 @@ if ($archivo) {
     fclose($archivo);
 
     if (count($resultado) > 0) {
-        $sea = getSEA($resultado[0]['SEA']);
+        depurar($resultado); // Verificar consistencia de datos
+        // Verificar si todos los datos tienen la misma sigla, SEA, grupo y código de carrera
         
+        $sea = getSEA($resultado[0]['SEA']);
         foreach ($resultado as $key => &$value) {
             $value = Revtareas($value, $sea); // Calcular el promedio de tareas
             $value = promedioParciales($value, $sea); // Calcular el promedio de parciales
@@ -212,12 +235,14 @@ if ($archivo) {
 
     $estudiantes_d = array_map(function($item) {
         return [
-            'Cu' => trim($item['Cu']),
-            'NombreUniversitario' => trim($item['NombreUniversitario']),
-            'CodigoCarrera' => trim($item['CodigoCarrera']),
-            'GestionAcademica' => trim($item['GestionAcademica']),
-            'CodigoModalidadCurso' => trim($item['CodigoModalidadCurso']),
-            'SiglaMateria' => trim($item['SiglaMateria']),
+            'Nombre de usuario' => $item['Nombre de usuario'],
+            'Sigla' => $item['Sigla'],
+            'CodigoCarrera' => $item['CodigoCarrera'],
+            'SEA' => $item['SEA'],
+            'Grupo' => $item['Grupo'],
+            'Tarea:Notas de Práctica (Real)' => $item['Tarea:Notas de Práctica (Real)'],
+            'Total Parcial' => $item['Total Parcial'],
+            'Cuestionario:EXAMEN FINAL (Real)' => $item['Cuestionario:EXAMEN FINAL (Real)'],
             'errores' => is_array($item['errores']) ? implode(' | ', array_map(fn($e) => $e['msg'], $item['errores'])) : '', // Concatenamos los mensajes de error
             'erroresJson' => json_encode($item['errores'], JSON_UNESCAPED_UNICODE) // Exportamos como JSON
         ];
@@ -243,7 +268,7 @@ if ($archivo) {
         // echo "Archivo generado exitosamente: $nombreArchivo\n";
     }
     else {
-        echo "No se encontraron errores en las calificaciones.\n <br>";
+        echo "<h1>No se encontraron errores en las calificaciones</h1>\n <br>";
         //generar sql
         // echo '<pre>'.var_export($resultado, true).'</pre>';
         foreach ($resultado as $datos) {
